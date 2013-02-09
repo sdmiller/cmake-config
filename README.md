@@ -46,5 +46,11 @@ $ cmake-config Boost --components thread filesystem
 -I/usr/include -L/usr/lib -l/usr/lib/libboost\_thread-mt.so -lpthread -l/usr/lib/libboost\_filesystem-mt.so
 ```
 
+For a complete list of options, see
+
+```bash
+$ cmake-config --help
+```
+
 Check out the CMakeLists.txt file (which is also hard-coded into the python script for standalone functionality) to see 
 how this is working. Want more features? Let me know or contribute them yourself!
