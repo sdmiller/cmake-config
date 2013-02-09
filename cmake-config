@@ -1,0 +1,133 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import os.path
+from subprocess import call, PIPE
+import re
+import shutil
+
+parser = argparse.ArgumentParser (description="A command-line tool for querying CMake packages")
+parser.add_argument ('package', metavar='PKG', help="The package we are looking for")
+parser.add_argument ('--libs-only-l', action='store_true', help="Print the -l flags")
+parser.add_argument ('--libs-only-L', action='store_true', help="Print the -L flags")
+parser.add_argument ('--cflags-only-I', action='store_true', help="Print the -I flags")
+parser.add_argument ('--cflags-only-other', action='store_true', help="Print all other misc compile flags")
+parser.add_argument ('-m','--module-path',  metavar='MODULE_PATH', type=str, dest='module_path', help="Optionally provide a pointer to the location of Find[package].cmake or [package]Config.cmake")
+parser.add_argument ('-v','--version',  metavar='VERSION', type=str, dest='version', help="Optionally give a required version number")
+parser.add_argument ('-c','--components',  metavar='C1 C2 ...', type=str, nargs='+', dest='components', help="List of components")
+
+args = parser.parse_args ()
+
+# Make the temporary build directory
+builddir = '/tmp/.cmake-cfg'
+if not os.path.isdir (builddir):
+    os.mkdir (builddir)
+
+# Populate the CMakeLists.txt ... for now we're just writing it by hand to make this standalone
+f = open(builddir+"/CMakeLists.txt", 'w')
+f.write(
+"""
+cmake_minimum_required(VERSION 2.4.6)
+
+#find the package
+if(PATH_TO_FILE)
+  set (CMAKE_MODULE_PATH ${PATH_TO_FILE} ${CMAKE_MODULE_PATH})
+  set (${PACKAGE}_DIR ${PATH_TO_FILE})
+endif(PATH_TO_FILE)
+if(PACKAGE_COMPONENTS)
+    if(REQUIRED_VERSION)
+        find_package(${PACKAGE} ${REQUIRED_VERSION} COMPONENTS ${PACKAGE_COMPONENTS} QUIET REQUIRED)
+    else(REQUIRED_VERSION)
+        find_package(${PACKAGE} COMPONENTS ${PACKAGE_COMPONENTS} QUIET REQUIRED)
+    endif(REQUIRED_VERSION)
+else(PACKAGE_COMPONENTS)
+    if(REQUIRED_VERSION)
+        find_package(${PACKAGE} ${REQUIRED_VERSION} QUIET REQUIRED)
+    else(REQUIRED_VERSION)
+        find_package(${PACKAGE} QUIET REQUIRED)
+    endif(REQUIRED_VERSION)
+endif(PACKAGE_COMPONENTS)
+set(FOUNDIT ${${PACKAGE}_FOUND})
+if (FOUNDIT)
+    #includes
+    set(INCLUDE_VAR ${${PACKAGE}_INCLUDE_DIRS} ${${PACKAGE}_INCLUDE_DIRECTORIES})
+    if(INCLUDE_VAR)
+      list(REMOVE_DUPLICATES INCLUDE_VAR)
+      set(INCLUDE_STRING "")
+      foreach (inc ${INCLUDE_VAR})
+        set(INCLUDE_STRING "${INCLUDE_STRING}-I${inc} ")
+      endforeach(inc)
+    endif(INCLUDE_VAR)
+    message(STATUS "BEGIN_IFLAGS(" ${INCLUDE_STRING} ")END_IFLAGS")
+    #lib dirs
+    set(LIBDIR_VAR ${${PACKAGE}_LIBRARY_DIRS} ${${PACKAGE}_LIBRARY_DIRECTORIES} ${${PACKAGE}_LIB_DIRS} ${${PACKAGE}_LIB_DIRECTORIES})
+    if (LIBDIR_VAR)
+      list(REMOVE_DUPLICATES LIBDIR_VAR)
+      set(LIBDIR_STRING "")
+      foreach (libdir ${LIBDIR_VAR})
+        set(LIBDIR_STRING "${LIBDIR_STRING}-L${libdir} ")
+      endforeach(libdir)
+    endif (LIBDIR_VAR)
+    message(STATUS "BEGIN_LFLAGS(" ${LIBDIR_STRING} ")END_LFLAGS")
+    #libraries
+    set(LIB_VAR ${${PACKAGE}_LIBRARIES} ${${PACKAGE}_LIBS} ${${PACKAGE}_LIBRARY} ${${PACKAGE}_LIB})
+    if (LIB_VAR)
+      list(REMOVE_DUPLICATES LIB_VAR)
+      set(LIB_STRING "")
+      foreach (lib ${LIB_VAR})
+        set(LIB_STRING "${LIB_STRING}-l${lib} ")
+      endforeach(lib)
+    endif (LIB_VAR)
+    message(STATUS "BEGIN_lFLAGS(" ${LIB_STRING} ")END_lFLAGS")
+    
+    #defines
+    set(DEF_VAR ${${PACKAGE}_DEFINES} ${${PACKAGE}_DEFINITIONS})
+    if (DEF_VAR)
+      list(REMOVE_DUPLICATES DEF_VAR)
+      set(DEF_STRING "")
+      foreach (def ${DEF_VAR})
+        set(LIB_STRING "${DEF_STRING}${def} ")
+      endforeach(def)
+    endif (DEF_VAR)
+    message(STATUS "BEGIN_DFLAGS(" ${DEF_STRING} ")END_DFLAGS")
+endif (FOUND_IT)
+"""
+)
+f.close ()
+
+# Now build with it
+logfile=builddir+"/cmakeout"
+CMD = "cd " + builddir + " && cmake . -DPACKAGE=" + args.package + " "
+if args.module_path:
+    CMD += "-DPATH_TO_FILE=" + args.module_path + " "
+if args.version:
+    CMD += "-DREQUIRED_VERSION=" + args.version + " "
+if args.components:
+    CMD += "-DPACKAGE_COMPONENTS=\""
+    for component in args.components:
+        CMD += component+";"
+    CMD += "\""
+CMD += " > " + logfile
+call(CMD, shell=True, stdout=PIPE, stderr=PIPE)
+
+# And query the file
+# We'll want to list everything if we get no arguments
+list_all = not (args.libs_only_l or args.libs_only_L or args.cflags_only_I or args.cflags_only_other)
+outstr = ""
+f = open(logfile)
+for line in f.readlines ():
+    m = re.match (".*BEGIN_(.*)\((.*)\)END_.*", line)
+    if m:
+        outtype = m.group(1)
+        value = m.group(2)
+        toprint = False
+        toprint |= (outtype == "lFLAGS" and (args.libs_only_l or list_all))
+        toprint |= (outtype == "LFLAGS" and (args.libs_only_L or list_all))
+        toprint |= (outtype == "IFLAGS" and (args.cflags_only_I or list_all))
+        toprint |= (outtype == "DFLAGS" and (args.cflags_only_other or list_all))
+        if (toprint):
+            outstr += value + " "
+f.close ()
+shutil.rmtree (builddir)
+print outstr
