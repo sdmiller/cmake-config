@@ -15,9 +15,13 @@ Example usage:
 
 ```bash
 $ cmake-config OpenRAVE
--I/usrinclude/openrave-0.8 -L/usr/lib -lopenrave0.8
+-I/usr/include/openrave-0.8 -L/usr/lib -lopenrave0.8
 $ cmake-config --libs-only-l OpenRAVE
 -lopenrave0.8
+$ cmake-config OpenRAVE --libs-only-L
+-L/usr/lib
+$ cmake-config OpenRAVE --cflags-only-I
+-I/usr/include/openrave-0.8
 ```
 
 The version can be forced with a --version flag
