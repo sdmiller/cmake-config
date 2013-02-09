@@ -4,12 +4,10 @@ cmake-config
 Command line tool for getting information about CMake-installed packages, in the vein of pkg-config. 
 
 Build systems are a wonderful thing. Unfortunately, there are more than one. And while CMake is my build system 
-of choice for personal research code, I often find myself working with other systems (autoconf, ROS, someone else's 
-hard-coded Makefile, etc). For packages installed through apt-get, pkg-config lets us query for build information. 
+of choice for personal research code, I often find myself working within other systems (autoconf, ROS, someone else's 
+hard-coded Makefile, etc). Getting these to play nicely with other dependencies can be a pain. 
+For packages installed through apt-get, pkg-config lets us query for build information straight from the command line. 
 cmake-config attempts to do the same for CMake projects.
-
-This is, admittedly, a total hack -- it creates a CMakeLists.txt, configures while printing out useful variables, and 
-scrapes out the important information. The naming conventions are meant to follow the similar pkg-config. 
 
 Example usage:
 
@@ -52,5 +50,5 @@ For a complete list of options, see
 $ cmake-config --help
 ```
 
-Check out the CMakeLists.txt file (which is also hard-coded into the python script for standalone functionality) to see 
+Check out the grossly hacked CMakeLists.txt file (which is also hard-coded into the python script for standalone functionality) to see 
 how this is working. Want more features? Let me know or contribute them yourself!
