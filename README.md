@@ -24,6 +24,7 @@ The version can be forced with a --version flag
 
 ```bash
 $ cmake-config OpenRAVE --version 0.9
+
 $ cmake-config OpenRAVE --version 0.8
 -I/usr/include/openrave-0.8 -L/usr/lib -lopenrave0.8
 ```
