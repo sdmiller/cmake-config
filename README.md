@@ -13,23 +13,33 @@ scrapes out the important information. The naming conventions are meant to follo
 
 Example usage:
 
+```bash
 $ cmake-config OpenRAVE
--I/usr/include/openrave-0.8 -L/usr/lib -lopenrave0.8
+-I/usrinclude/openrave-0.8 -L/usr/lib -lopenrave0.8
 $ cmake-config --libs-only-l OpenRAVE
 -lopenrave0.8
+```
 
 The version can be forced with a --version flag
-$ cmake-config OpenRAVE --version 0.9
 
+```bash
+$ cmake-config OpenRAVE --version 0.9
 $ cmake-config OpenRAVE --version 0.8
 -I/usr/include/openrave-0.8 -L/usr/lib -lopenrave0.8
+```
 
 If you have a local install, it can be used with the --module-path option
+
+```bash
 $ cmake-config PCL --module-path=path/to/pcl/share
+```
 
 If you are using a library with components (e.g. Boost), specific components can be specified with the --components option
+
+```bash
 $ cmake-config Boost --components thread filesystem
 -I/usr/include -L/usr/lib -l/usr/lib/libboost\_thread-mt.so -lpthread -l/usr/lib/libboost\_filesystem-mt.so
+```
 
 Check out the CMakeLists.txt file (which is also hard-coded into the python script for standalone functionality) to see 
 how this is working. Want more features? Let me know or contribute them yourself!
