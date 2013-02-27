@@ -100,7 +100,7 @@ f.close ()
 logfile=builddir+"/cmakeout"
 CMD = "cd " + builddir + " && cmake . -DPACKAGE=" + args.package + " "
 if args.module_path:
-    CMD += "-DPATH_TO_FILE=" + os.getcwd()+"/"+args.module_path + " "
+    CMD += "-DPATH_TO_FILE=" + args.module_path + " "
 if args.version:
     CMD += "-DREQUIRED_VERSION=" + args.version + " "
 if args.components:
